@@ -30,3 +30,4 @@ typedef struct {
 
 ApiDesc loadApiDesc(char* fname);
 void freeApiDesc(ApiDesc desc);
+void printDesc(ApiDesc root);

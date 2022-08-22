@@ -82,12 +82,9 @@ static YamlMapping* parseYaml(char* fname) {
 
         switch (event.type) {
             case YAML_MAPPING_START_EVENT: {
-                printf("Got mapping start: ");
                 if (currentBlock == NULL) {
-                    printf("First\n");
                     currentBlock = out;
                 } else {
-                    printf("Subsequent\n");
                     YamlMapping* newMapping = newYamlMapping(currentBlock);
                     INIT(newMapping->mapping);
                     // assume value
@@ -99,24 +96,18 @@ static YamlMapping* parseYaml(char* fname) {
                 break;
             }
             case YAML_MAPPING_END_EVENT: {
-                printf("Got mapping end\n");
                 if (currentBlock != NULL) {
                     currentBlock = currentBlock->parent;
-                } else {
-                    printf("(first)\n");
                 }
                 break;
             }
             case YAML_SCALAR_EVENT: {
-                printf("Got scalar: ");
                 if (currentBlock->childIdx % 2 == 0) {
-                    printf("Key\n");
                     // key
                     YamlMappingEntry newEntry;
                     CopyString(newEntry.key, event.data.scalar.value);
                     APPEND(currentBlock->mapping, newEntry);
                 } else {
-                    printf("Value\n");
                     // value
                     CurrentEntry.type = Scalar;
                     CopyString(CurrentEntry.val.scalar, event.data.scalar.value);
@@ -159,6 +150,31 @@ static void printYaml(YamlMapping* root, int indent) {
         }
     }
 #undef INDENT
+}
+
+// same shit different day
+void printDesc(ApiDesc root) {
+    printf("--- TYPES ---\n");
+    for (int i = 0; i < root.types.len; i++) {
+        Type currentType = root.types.root[i];
+        printf("%s:\n", currentType.name);
+        for (int j = 0; j < currentType.members.len; j++) {
+            TypedMember currentMember = currentType.members.root[j];
+            printf("  %s %s\n", currentMember.type, currentMember.name);
+        }
+    }
+    printf("--- ACTIONS ---\n");
+    for (int i = 0; i < root.actions.len; i++) {
+        Action currentAction = root.actions.root[i];
+        if (currentAction.returnType != NULL) printf("%s ", currentAction.returnType);
+        printf("%s(", currentAction.name);
+        for (int j = 0; j < currentAction.params.len; j++) {
+            TypedMember currentParam = currentAction.params.root[j];
+            printf("%s %s", currentParam.type, currentParam.name);
+            if (j != currentAction.params.len - 1) printf(", ");
+        }
+        printf(")\n");
+    }
 }
 
 static YamlMappingEntry* mapGet(YamlMapping* root, char* key) {
@@ -204,8 +220,11 @@ ApiDesc loadApiDesc(char* fname) {
 
     YamlMapping* root = parseYaml(fname);
 
+    // printYaml(root, 0);
+
     YamlMappingEntry* types = mapGet(root, "types");
     YamlMappingEntry* actions = mapGet(root, "actions");
+
     if (types != NULL) {
         if (types->type != Mapping) panic("'types' must be a key/value dictionary");
         for (int i = 0; i < types->val.mapping->mapping.len; i++) {
@@ -228,13 +247,17 @@ ApiDesc loadApiDesc(char* fname) {
     if (actions != NULL) {
         if (actions->type != Mapping) panic("'actions' must be a key/value dictionary");
         for (int i = 0; i < actions->val.mapping->mapping.len; i++) {
-            YamlMappingEntry currentActionRaw = types->val.mapping->mapping.root[i];
+            YamlMappingEntry currentActionRaw = actions->val.mapping->mapping.root[i];
             if (currentActionRaw.type != Mapping) panic("An action must correspond to a key/value dictionary of data");
             Action currentAction;
             CopyString(currentAction.name, currentActionRaw.key);
-            YamlMappingEntry* returnTypeRaw = mapGet(currentActionRaw.val.mapping, "returnType");
-            if (returnTypeRaw != NULL && returnTypeRaw->type != Scalar) panic("returnType must have a string value");
-            currentAction.returnType = returnTypeRaw->val.scalar;
+            YamlMappingEntry* returnTypeRaw = mapGet(currentActionRaw.val.mapping, "returns");
+            if (returnTypeRaw != NULL) {
+                if (returnTypeRaw->type != Scalar) panic("returnType must have a string value");
+                CopyString(currentAction.returnType, returnTypeRaw->val.scalar);
+            } else {
+                currentAction.returnType = NULL;
+            }
             INIT(currentAction.params);
             YamlMappingEntry* paramsRaw = mapGet(currentActionRaw.val.mapping, "params");
             if (paramsRaw != NULL) {
