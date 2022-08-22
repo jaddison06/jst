@@ -75,9 +75,12 @@ static YamlMapping* parseYaml(char* fname) {
 
         switch (event.type) {
             case YAML_MAPPING_START_EVENT: {
+                printf("Got mapping start: ");
                 if (currentBlock == NULL) {
+                    printf("First\n");
                     currentBlock = out;
                 } else {
+                    printf("Subsequent\n");
                     YamlMapping* newMapping = malloc(sizeof(YamlMapping));
                     newMapping->parent = currentBlock;
                     INIT(newMapping->mapping);
@@ -88,19 +91,25 @@ static YamlMapping* parseYaml(char* fname) {
                 break;
             }
             case YAML_MAPPING_END_EVENT: {
+                printf("Got mapping end\n");
                 if (currentBlock != NULL) {
                     currentBlock = currentBlock->parent;
+                } else {
+                    printf("(first)\n");
                 }
                 break;
             }
             case YAML_SCALAR_EVENT: {
+                printf("Got scalar: ");
                 if (currentBlock->childIdx % 2 == 0) {
+                    printf("Key\n");
                     // key
                     YamlMappingEntry newEntry;
                     newEntry.key = malloc(strlen(event.data.scalar.value) + 1);
                     strcpy(newEntry.key, event.data.scalar.value);
                     APPEND(currentBlock->mapping, newEntry);
                 } else {
+                    printf("Value\n");
                     // value
                     YamlMappingEntry* currentEntry = &currentBlock->mapping.root[currentBlock->mapping.len - 1];
                     currentEntry->type = Scalar;
