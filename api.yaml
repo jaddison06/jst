@@ -1,0 +1,16 @@
+types:
+  Person:
+    id: int
+    name: string
+    boring: bool
+
+actions:
+  addPerson:
+    params:
+      person: Person
+  getPeople:
+    returns: list[Person]
+  removePerson:
+    params:
+      id: int
+    returns: bool
