@@ -682,3 +682,9 @@ yaml_queue_extend(void **start, void **head, void **tail, void **end);
 
 #define YAML_MALLOC_STATIC(type) (type*)yaml_malloc(sizeof(type))
 #define YAML_MALLOC(size)        (yaml_char_t *)yaml_malloc(size)
+
+// (jaddison) Including source instead of building library - need to define extra constants
+#define YAML_VERSION_MAJOR 0
+#define YAML_VERSION_MINOR 2
+#define YAML_VERSION_PATCH 5
+#define YAML_VERSION_STRING "0.2.5"

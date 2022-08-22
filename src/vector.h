@@ -19,7 +19,7 @@
 // doesn't do any additional typedefs so theoretically ur in the clear
 // to have multiple identical vec types. probs best not to tho -
 // keep this in .c files where poss
-#define DECL_VEC(type, name) typedef struct { \
+#define DECL_VEC(type, name) typedef struct name { \
     type* root; \
     int len, cap; \
 } name;

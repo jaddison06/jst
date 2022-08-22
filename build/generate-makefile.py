@@ -73,8 +73,8 @@ def main():
         if base in headers: dependencies.append(headers[base])
         dependencies += COMMON_DEPENDENCIES
 
-        makefile += makefile_item(obj_name,       dependencies, [fs_cmd('mkdir', dirname), f'{COMPILER} -c {file} -o {obj_name}'])
-        makefile += makefile_item(debug_obj_name, dependencies, [fs_cmd('mkdir', dirname), f'{COMPILER} -g -c {file} -o {debug_obj_name}'])
+        makefile += makefile_item(obj_name,       dependencies, [fs_cmd('mkdir', dirname), f'{COMPILER} -c {file} -I. -o {obj_name}'])
+        makefile += makefile_item(debug_obj_name, dependencies, [fs_cmd('mkdir', dirname), f'{COMPILER} -g -c {file} -I. -o {debug_obj_name}'])
 
         objects.append(obj_name)
         debug_objects.append(debug_obj_name)
