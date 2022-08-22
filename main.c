@@ -1,6 +1,7 @@
 #include "src/ApiDesc.h"
 
 int main() {
-    ApiDesc desc = loadDesc("api.yaml");
+    ApiDesc desc = loadApiDesc("api.yaml");
+    freeApiDesc(desc);
     return 0;
 }

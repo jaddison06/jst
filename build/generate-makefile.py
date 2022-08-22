@@ -95,8 +95,7 @@ def main():
     ) + makefile_item(
         'debug',
         debug_objects,
-        # -rdynamic allows glibc's backtrace functions to lookup symbol info
-        [f'{COMPILER} -g -rdynamic {" ".join(debug_objects)} -o {executable}{libs_str}']
+        [f'{COMPILER} -g {" ".join(debug_objects)} -o {executable}{libs_str}']
     ) + makefile_item(
         'run',
         ['all'],

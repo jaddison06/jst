@@ -28,4 +28,5 @@ typedef struct {
     ApiActionsList actions;
 } ApiDesc;
 
-ApiDesc loadDesc(char* fname);
+ApiDesc loadApiDesc(char* fname);
+void freeApiDesc(ApiDesc desc);
