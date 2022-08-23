@@ -10,7 +10,7 @@
 
 static bool sockets_initialized = false;
 
-static void shutdown() {
+static void jst_shutdown() {
     if (!sockets_initialized) return;
 
     WSACleanup();
@@ -25,7 +25,7 @@ static void ensureInit() {
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != 0) panic("Failed to initialize WinSock2");
 
-    atexit(shutdown);
+    atexit(jst_shutdown);
     sockets_initialized = true;
 }
 
@@ -33,7 +33,7 @@ void createServer(char* port, AcceptCB acceptClient) {
     ensureInit();
 
     SOCKET server;
-    struct addrinfo *result = NULL, hints;
+    struct addrinfo *ai = NULL, hints;
 
     ZeroMemory(&hints, sizeof (hints));
     hints.ai_family = AF_INET;
@@ -41,23 +41,23 @@ void createServer(char* port, AcceptCB acceptClient) {
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
-    int result = getaddrinfo(NULL, port, &hints, &result);
+    int result = getaddrinfo(NULL, port, &hints, &ai);
     if (result != 0) panic("getaddrinfo failed");
 
-    server = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    server = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
     if (server == INVALID_SOCKET) {
-        freeaddrinfo(result);
+        freeaddrinfo(ai);
         panic("socket create failed");
     }
 
-    result = bind(server, result->ai_addr, (int)result->ai_addrlen);
+    result = bind(server, ai->ai_addr, (int)ai->ai_addrlen);
     if (result == SOCKET_ERROR) {
         closesocket(server);
-        freeaddrinfo(result);
+        freeaddrinfo(ai);
         panic("bind failed");
     }
 
-    freeaddrinfo(result);
+    freeaddrinfo(ai);
 
     result = listen(server, SOMAXCONN);
     if (result == SOCKET_ERROR) {
