@@ -27,7 +27,9 @@ def all_with_extension(*exts: str) -> list[str]:
     return out
 
 COMPILER = 'gcc'
-LIBS = []
+LIBS: dict[str, list[str]] = {
+    'Windows': ['ws2_32']
+}
 EXECUTABLE = 'jst'
 SOURCE_EXTS = ['.c']
 HEADER_EXTS = ['.h']
@@ -80,7 +82,7 @@ def main():
         debug_objects.append(debug_obj_name)
     
     
-    libs_str = ' -l'.join(LIBS)
+    libs_str = ' -l'.join(LIBS.get(system(), []))
     if libs_str: libs_str = ' -l' + libs_str
 
     # can't modify a constant or mypy will murder my family
