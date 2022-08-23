@@ -96,7 +96,7 @@ int jst_close(Socket s) {
 #include "panic.h"
 
 void createServer(char* port, AcceptCB acceptClient) {
-    int sockfd, newsockfd;
+    int sockfd;
     struct sockaddr_in server;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) panic("create socket failed");
@@ -104,7 +104,20 @@ void createServer(char* port, AcceptCB acceptClient) {
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(atoi(port));
     if (bind(sockfd, (struct sockaddr*) &server, sizeof(server)) < 0) panic("bind failed");
-    listen(sockfd, 5);
+    if (listen(sockfd, 10) < 0) panic("listen failed");
+    Socket client_sock;
+    struct sockaddr_in client;
+    socklen_t client_len = sizeof(client);
+    while (1) {
+        client_sock.sockfd = accept(sockfd, (struct sockaddr*)&client, &client_len);
+        pid_t pid = fork();
+        if (pid == 0) {
+            // child process
+            acceptClient(client_sock);
+            exit(0);
+        }
+    }
+
 }
 
 int jst_send(Socket s, char* buf, int len) {
