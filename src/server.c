@@ -29,8 +29,25 @@ static void ensureInit() {
     sockets_initialized = true;
 }
 
-void createServer(char* port, AcceptCB acceptClient) {
+// I'm using _beginthread cos it's quick and easy, and means I don't have to deal
+// with Win32 weirdness (why do you want me to allocate my own heap???????)
+// However, it's v picky about the callback - it needs to have a single void* parameter,
+// and the ArgList doesn't play very nicely, nor is it well documented. My solution,
+// inelegant as it is, is to just move the callback out to a global and then start the
+// thread with a trampoline function. If you want to have a crack at making some sense
+// of this, see:
+//   _beginthread & _beginthreadex docs https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/beginthread-beginthreadex
+//   
+static AcceptCB acceptClient;
+static Socket newConn;
+static void acceptTrampoline(void* unused) {
+    acceptClient(newConn);
+}
+
+void createServer(char* port, AcceptCB acceptClient_) {
     ensureInit();
+
+    acceptClient = acceptClient_;
 
     SOCKET server;
     struct addrinfo *ai = NULL, hints;
@@ -72,8 +89,9 @@ void createServer(char* port, AcceptCB acceptClient) {
             closesocket(server);
             panic("accept failed");
         }
-        // On Windows, spawn a new thread for each client
-        _beginthread(acceptClient, 0, &client);
+        // On Windows, spawn a new thread for each client (ewwww forking)
+        newConn = client;
+        _beginthread(acceptTrampoline, 0, NULL);
     }
     
     // todo: close socket?
@@ -110,6 +128,7 @@ void createServer(char* port, AcceptCB acceptClient) {
     socklen_t client_len = sizeof(client);
     while (1) {
         client_sock.sockfd = accept(sockfd, (struct sockaddr*)&client, &client_len);
+        // On Unix, each client gets its own process - the client handler can then play with its own sanboxed threads
         pid_t pid = fork();
         if (pid == 0) {
             // child process
