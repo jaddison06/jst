@@ -35,13 +35,16 @@ static void ensureInit() {
 // and the ArgList doesn't play very nicely, nor is it well documented. My solution,
 // inelegant as it is, is to just move the callback out to a global and then start the
 // thread with a trampoline function. If you want to have a crack at making some sense
-// of this, see:
-//   _beginthread & _beginthreadex docs https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/beginthread-beginthreadex
-//   
+// of this, see https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/beginthread-beginthreadex
 static AcceptCB acceptClient;
 static Socket newConn;
 static void acceptTrampoline(void* unused) {
-    acceptClient(newConn);
+    static int clientID = 0;
+    // in theoretical theory this should probs have a mutex. we'll see if it shits ig
+    int thisClient = clientID++;
+    printf("Got client %i\n", thisClient);
+    acceptClient(newConn, thisClient);
+    printf("Client thread %i terminated\n", thisClient);
 }
 
 void createServer(char* port, AcceptCB acceptClient_) {
@@ -98,15 +101,15 @@ void createServer(char* port, AcceptCB acceptClient_) {
 }
 
 int jst_send(Socket s, char* buf, int len) {
-    send(s.socket, buf, len, 0);
+    return send(s.socket, buf, len, 0);
 }
 
 int jst_recv(Socket s, char* buf, int len) {
-    recv(s.socket, buf, len, 0);
+    return recv(s.socket, buf, len, 0);
 }
 
 int jst_close(Socket s) {
-    closesocket(s.socket);
+    return closesocket(s.socket);
 }
 
 #elif defined(JST_UNIX)
@@ -114,6 +117,8 @@ int jst_close(Socket s) {
 #include "panic.h"
 
 void createServer(char* port, AcceptCB acceptClient) {
+    static int clientID;
+
     int sockfd;
     struct sockaddr_in server;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -129,10 +134,14 @@ void createServer(char* port, AcceptCB acceptClient) {
     while (1) {
         client_sock.sockfd = accept(sockfd, (struct sockaddr*)&client, &client_len);
         // On Unix, each client gets its own process - the client handler can then play with its own sanboxed threads
+        // Pretty sure this doesn't need a mutex - it's happening synchronously, before the fork
+        int thisClient = clientID++;
+        printf("Got client %i\n", thisClient);
         pid_t pid = fork();
         if (pid == 0) {
             // child process
-            acceptClient(client_sock);
+            acceptClient(client_sock, thisClient);
+            printf("Client process %i terminating", thisClient);
             exit(0);
         }
     }
@@ -140,15 +149,15 @@ void createServer(char* port, AcceptCB acceptClient) {
 }
 
 int jst_send(Socket s, char* buf, int len) {
-    send(s.sockfd, buf, len, 0);
+    return send(s.sockfd, buf, len, 0);
 }
 
 int jst_recv(Socket s, char* buf, int len) {
-    recv(s.sockfd, buf, len, 0);
+    return recv(s.sockfd, buf, len, 0);
 }
 
 int jst_close(Socket s) {
-    close(s.sockfd);
+    return close(s.sockfd);
 }
 
 #endif // JST_UNIX

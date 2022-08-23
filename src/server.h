@@ -22,7 +22,7 @@ typedef struct {
 #endif
 } Socket;
 
-typedef void(*AcceptCB)(Socket);
+typedef void(*AcceptCB)(Socket, int);
 
 void createServer(char* port, AcceptCB acceptClient);
 int jst_send(Socket s, char* buf, int len);
