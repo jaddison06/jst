@@ -141,7 +141,7 @@ void createServer(char* port, AcceptCB acceptClient) {
         if (pid == 0) {
             // child process
             acceptClient(client_sock, thisClient);
-            printf("Client process %i terminating", thisClient);
+            printf("Client process %i terminating\n", thisClient);
             exit(0);
         }
     }
