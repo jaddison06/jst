@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <process.h>
 
-#include "../panic.h"
+#include "panic.h"
 
 static bool sockets_initialized = false;
 
@@ -91,33 +91,32 @@ int jst_close(Socket s) {
     closesocket(s.socket);
 }
 
-#else if defined(JST_UNIX)
+#elif defined(JST_UNIX)
 
-#include "../panic.h"
+#include "panic.h"
 
 void createServer(char* port, AcceptCB acceptClient) {
-    Socket out;
     int sockfd, newsockfd;
     struct sockaddr_in server;
-    out.sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (out.sockfd < 0) panic("create socket failed")
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) panic("create socket failed");
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(atoi(port));
-    if (bind(out.sockfd, (struct sockaddr* &server, sizeof(server))) < 0) panic("bind failed");
-    return out;
+    if (bind(sockfd, (struct sockaddr*) &server, sizeof(server)) < 0) panic("bind failed");
+    listen(sockfd, 5);
 }
 
 int jst_send(Socket s, char* buf, int len) {
-
+    send(s.sockfd, buf, len, 0);
 }
 
 int jst_recv(Socket s, char* buf, int len) {
-
+    recv(s.sockfd, buf, len, 0);
 }
 
 int jst_close(Socket s) {
-    
+    close(s.sockfd);
 }
 
 #endif // JST_UNIX
