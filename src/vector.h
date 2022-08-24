@@ -8,6 +8,11 @@
 
 #define APPEND(vec, item) _append((void**)&((vec).root), &(item), sizeof(item), &(vec).len, &(vec).cap)
 
+#define REMOVE(vec, idx) do { \
+    memcpy(&(vec).root[idx], &(vec).root[idx + 1], sizeof(*(vec).root) * ((vec).len - idx - 1)); \
+    (vec).len--; \
+} while(0)
+
 #define INIT(vec) do { \
     vec.root = malloc(sizeof(*vec.root)); \
     vec.cap = 1; \

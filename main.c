@@ -1,5 +1,5 @@
 #include "src/server.h"
-#include "src/threading.h"
+#include "src/vector.h"
 
 #include <stdio.h>
 
@@ -18,16 +18,32 @@ void threadCB(void* unused) {
     printf("Thread created!!\n");
 }
 
+DECL_VEC(int, IntVec)
+
+void print(IntVec vec) {
+    for (int i = 0; i < vec.len; i++) {
+        printf("%i", vec.root[i]);
+        if (i < vec.len - 1) printf(", ");
+    }
+    printf("\n");
+}
+
 int main() {
     // createServer("8888", acceptClient);
     
-    // small threading test
-    jst_thread_t threads[10];
-    for (int i = 0; i < 10; i++) {
-        threads[i] = jstCreateThread(threadCB, NULL);
-    }
-    for (int i = 0; i < 10; i++) {
-        jstThreadJoin(threads[i]);
-    }
+    // small vectors test
+    IntVec vec;
+    INIT(vec);
+
+    int i = 1;
+    APPEND(vec, i);
+    i++;
+
+    print(vec);
+
+    REMOVE(vec, 0);
+
+    print(vec);
+
     return 0;
 }
