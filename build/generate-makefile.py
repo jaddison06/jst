@@ -28,7 +28,8 @@ def all_with_extension(*exts: str) -> list[str]:
 
 COMPILER = 'gcc'
 LIBS: dict[str, list[str]] = {
-    'Windows': ['ws2_32']
+    'Windows': ['ws2_32'],
+    'Linux': ['pthread']
 }
 EXECUTABLE = 'jst'
 SOURCE_EXTS = ['.c']
