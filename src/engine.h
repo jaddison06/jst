@@ -1,17 +1,49 @@
 #pragma once
 
+#include <stddef.h>
+
+#include "vector.h"
+#include "ApiDesc.h"
+
+typedef enum {
+    ReqObject,
+    ReqAction
+} RequestType;
+
 typedef struct {
-
-} Engine;
-
-typedef struct {
-
+    RequestType type;
+    int endpointID;
 } Request;
 
+DECL_VEC(Request, RequestList)
+
+struct Engine;
+
+typedef void(*RequestCB)(struct Engine*, void*);
+
+typedef struct {
+    char* name;
+    RequestCB cb;
+} Endpoint;
+
+typedef struct Engine {
+    ApiDesc api;
+    RequestList requests;
+    Endpoint* objects;
+    Endpoint* actions;
+} Engine;
+
+Engine* createEngine(char* apiDescFile);
+void destroyEngine(Engine* engine);
+
 // Called by network thread to get the ball rolling
-void addRequest(Engine* engine);
+void addRequest(Engine* engine, Request request);
 
 // Called by request worker threads
+
+void markDone(Engine* engine, void* target);
+void markPartial(Engine* engine, void* target, size_t done);
+
 
 // okokokokokokokokokokokokokokok
 // types are either primitives or user-defined (list? map?)
@@ -24,6 +56,7 @@ void addRequest(Engine* engine);
 // callbacks get a POINTER to the target (a primitive OR a struct) + a pointer to the engine
 // it's *their* responsibility to allocate memory etc where required (todo: this is fucking stupid)
 
+/*
 void cbSayHello(Engine* engine, char** target) {
     *target = malloc(14);
     strcpy(target, "Hello, World!");
@@ -42,3 +75,4 @@ void cbIncrementalHello(Engine* engine, char** target) {
     }
     markDone(engine, target);
 }
+*/
