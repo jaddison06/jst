@@ -4,12 +4,13 @@ types:
     name: string
     boring: bool
 
+objects:
+  people: list[Person]
+
 actions:
   addPerson:
     params:
       person: Person
-  getPeople:
-    returns: list[Person]
   removePerson:
     params:
       id: int
