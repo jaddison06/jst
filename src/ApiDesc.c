@@ -208,8 +208,15 @@ void freeApiDesc(ApiDesc desc) {
         DESTROY(currentAction.params);
     }
 
+    for (int i = 0; i < desc.objects.len; i++) {
+        TypedMember currentObject = desc.objects.root[i];
+        free(currentObject.name);
+        free(currentObject.type);
+    }
+
     DESTROY(desc.types);
     DESTROY(desc.actions);
+    DESTROY(desc.objects);
 }
 
 ApiDesc loadApiDesc(char* fname) {
@@ -217,6 +224,7 @@ ApiDesc loadApiDesc(char* fname) {
 
     INIT(out.types);
     INIT(out.actions);
+    INIT(out.objects);
 
     YamlMapping* root = parseYaml(fname);
 
@@ -224,6 +232,7 @@ ApiDesc loadApiDesc(char* fname) {
 
     YamlMappingEntry* types = mapGet(root, "types");
     YamlMappingEntry* actions = mapGet(root, "actions");
+    YamlMappingEntry* objects = mapGet(root, "objects");
 
     if (types != NULL) {
         if (types->type != Mapping) panic("'types' must be a key/value dictionary");
@@ -272,6 +281,17 @@ ApiDesc loadApiDesc(char* fname) {
                 }
             }
             APPEND(out.actions, currentAction);
+        }
+    }
+    if (objects != NULL) {
+        if (objects->type != Mapping) panic("'objects' must be a key/value dictionary");
+        for (int i = 0; i < objects->val.mapping->mapping.len; i++) {
+            YamlMappingEntry currentObjectRaw = actions->val.mapping->mapping.root[i];
+            if (currentObjectRaw.type != Scalar) panic("'objects' must correspond to a key/value dictionary of endpoints : types");
+            TypedMember currentObject;
+            CopyString(currentObject.name, currentObjectRaw.key);
+            CopyString(currentObject.type, currentObjectRaw.val.scalar);
+            APPEND(out.objects, currentObject);
         }
     }
 

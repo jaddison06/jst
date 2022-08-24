@@ -26,6 +26,7 @@ DECL_VEC(Action, ApiActionsList)
 typedef struct {
     ApiTypesList types;
     ApiActionsList actions;
+    MemberList objects;
 } ApiDesc;
 
 ApiDesc loadApiDesc(char* fname);
