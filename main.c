@@ -1,4 +1,5 @@
 #include "src/server.h"
+#include "src/threading.h"
 
 #include <stdio.h>
 
@@ -13,7 +14,20 @@ void acceptClient(Socket s, int id) {
     printf("Closed %i\n", id);
 }
 
+void threadCB(void* unused) {
+    printf("Thread created!!\n");
+}
+
 int main() {
-    createServer("8888", acceptClient);
+    // createServer("8888", acceptClient);
+    
+    // small threading test
+    jst_thread_t threads[10];
+    for (int i = 0; i < 10; i++) {
+        threads[i] = jstCreateThread(threadCB, NULL);
+    }
+    for (int i = 0; i < 10; i++) {
+        jstThreadJoin(threads[i]);
+    }
     return 0;
 }
