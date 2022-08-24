@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-void acceptClient(Socket s, int id) {
+void acceptClient(socket_t s, int id) {
     char buf[100];
     while (1) {
         int received = jst_recv(s, buf, 100);

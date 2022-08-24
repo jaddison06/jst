@@ -29,22 +29,24 @@ static void ensureInit() {
     sockets_initialized = true;
 }
 
-// aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-static AcceptCB acceptClient;
-static Socket newConn;
-static void acceptTrampoline(void* unused) {
+typedef struct {
+    AcceptCB acceptClient;
+    socket_t newConn;
+} ClientThreadArgs;
+
+static void acceptTrampoline(void* args_) {
+    ClientThreadArgs* args = args_;
     static int clientID = 0;
     // in theoretical theory this should probs have a mutex. we'll see if it shits ig
     int thisClient = clientID++;
     printf("Got client %i\n", thisClient);
-    acceptClient(newConn, thisClient);
+    args->acceptClient(args->newConn, thisClient);
     printf("Client thread %i terminated\n", thisClient);
+    free(args);
 }
 
-void createServer(char* port, AcceptCB acceptClient_) {
+void createServer(char* port, AcceptCB acceptClient) {
     ensureInit();
-
-    acceptClient = acceptClient_;
 
     SOCKET server;
     struct addrinfo *ai = NULL, hints;
@@ -79,31 +81,21 @@ void createServer(char* port, AcceptCB acceptClient_) {
         panic("listen failed");
     }
 
-    Socket client;
+    socket_t client;
     while (1) {
-        client.socket = accept(server, NULL, NULL);
-        if (client.socket == INVALID_SOCKET) {
+        client = accept(server, NULL, NULL);
+        if (client == INVALID_SOCKET) {
             closesocket(server);
             panic("accept failed");
         }
         // On Windows, spawn a new thread for each client (ewwww forking)
-        newConn = client;
-        _beginthread(acceptTrampoline, 0, NULL);
+        ClientThreadArgs* args = malloc(sizeof(ClientThreadArgs));
+        args->acceptClient = acceptClient;
+        args->newConn = client;
+        _beginthread(acceptTrampoline, 0, args);
     }
     
     // todo: close socket?
-}
-
-int jst_send(Socket s, char* buf, int len) {
-    return send(s.socket, buf, len, 0);
-}
-
-int jst_recv(Socket s, char* buf, int len) {
-    return recv(s.socket, buf, len, 0);
-}
-
-int jst_close(Socket s) {
-    return closesocket(s.socket);
 }
 
 #elif defined(JST_UNIX)
@@ -140,18 +132,6 @@ void createServer(char* port, AcceptCB acceptClient) {
         }
     }
 
-}
-
-int jst_send(Socket s, char* buf, int len) {
-    return send(s.sockfd, buf, len, 0);
-}
-
-int jst_recv(Socket s, char* buf, int len) {
-    return recv(s.sockfd, buf, len, 0);
-}
-
-int jst_close(Socket s) {
-    return close(s.sockfd);
 }
 
 #endif // JST_UNIX
